@@ -9,9 +9,12 @@
   <link rel="icon" href="StolenIconSorryMarissa.ico" type="image/x-icon">
   <!-- Bootstrap CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
 </head>
 
+
 <body class="bg-light">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
   <div class="container py-5">
     <div class="row justify-content-center">
@@ -54,7 +57,7 @@
                 Total: €<span id="totalPrice">0.00</span>
               </div>
 
-              <datalist id="drinkList"></datalist>
+
 
               <div id="sending" class="alert alert-info d-none" role="alert">
                 Sending...
@@ -185,13 +188,8 @@
       "Teeling whiskey": 7,
       "Remy martin": 7.5
     };
-    const drinkList = document.getElementById("drinkList");
 
-    Object.keys(drinks).forEach(drink => {
-      const option = document.createElement("option");
-      option.value = drink;
-      drinkList.appendChild(option);
-    });
+
     function addDrinkRow(drink = "", amount = 1) {
 
       const row = document.createElement("div");
@@ -199,36 +197,63 @@
       row.className = "row mb-2 drink-row";
 
       row.innerHTML = `
-    <div class="col-7">
-      <input
-        list="drinkList"
-        class="form-control drink-input"
-        placeholder="Search drink..."
-        value="${drink}"
-        required>
-    </div>
+        <div class="col-7">
+          <select class="form-select drink-input" required>
+          <option value="" disabled selected>Select drink...</option>
+          </select>
+        </div>
 
-    <div class="col-3">
-      <input
-        type="number"
-        min="1"
-        value="${amount}"
-        class="form-control amount-input"
-        required>
-    </div>
+        <div class="col-3">
+          <input
+            type="number"
+            min="1"
+            value="${amount}"
+            class="form-control amount-input"
+            required>
+        </div>
 
-    <div class="col-2">
-      <button
-        type="button"
-        class="btn btn-danger remove-row">
-        ×
-      </button>
-    </div>
-  `;
-
+        <div class="col-2">
+          <button
+            type="button"
+            class="btn btn-danger remove-row">
+            ×
+          </button>
+        </div>
+      `;
       document
         .getElementById("drinkRows")
         .appendChild(row);
+      const select = row.querySelector(".drink-input");
+
+      Object.keys(drinks).forEach(drinkName => {
+        const option = document.createElement("option");
+        option.value = drinkName;
+        option.textContent = drinkName;
+
+        if (drinkName === drink) {
+          option.selected = true;
+        }
+
+        select.appendChild(option);
+      });
+
+        const tomSelect = new TomSelect(select, {
+        create: false,
+        maxOptions: 500,
+        searchField: ['text'],
+        placeholder: 'Search drink...',
+
+        onChange: function(value) {
+          calculateTotal();
+
+          if (value && !drinks[value]) {
+            this.clear();
+            alert("Please select a drink from the list.");
+          }
+        }
+      });
+
+      tomSelect.on('change', calculateTotal);
 
       row.querySelector(".drink-input")
         .addEventListener("input", calculateTotal);
@@ -297,8 +322,10 @@
               row.querySelector(".amount-input").value
             );
 
-          if (!drink) return;
-
+          if (!drinks[drink]) {
+            alert("Please select a valid drink from the dropdown.");
+            return;
+          }
           items.push({
             drink,
             amount,
